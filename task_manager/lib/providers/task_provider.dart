@@ -6,7 +6,7 @@ enum TaskFilter { all, completed, pending }
 
 class TaskProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
-  
+
   List<Task> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -20,7 +20,7 @@ class TaskProvider extends ChangeNotifier {
       case TaskFilter.pending:
         return _tasks.where((task) => !task.isCompleted).toList();
       case TaskFilter.all:
-      return _tasks;
+        return _tasks;
     }
   }
 
@@ -53,7 +53,7 @@ class TaskProvider extends ChangeNotifier {
   Future<void> addTask(String title) async {
     try {
       final newTask = await _apiService.addTask(title);
-      _tasks.insert(0, newTask);  // Add to top of list
+      _tasks.insert(0, newTask); // Add to top of list
       notifyListeners();
     } catch (e) {
       _errorMessage = 'Failed to add task: $e';
@@ -66,7 +66,7 @@ class TaskProvider extends ChangeNotifier {
   Future<void> toggleTask(int index) async {
     final task = tasks[index];
     final originalStatus = task.isCompleted;
-    
+
     // Optimistic update
     task.toggleCompleted();
     notifyListeners();
@@ -87,7 +87,7 @@ class TaskProvider extends ChangeNotifier {
   Future<void> deleteTask(int index) async {
     final task = tasks[index];
     final removedTask = task;
-    
+
     // Optimistic removal
     _tasks.remove(task);
     notifyListeners();
@@ -101,6 +101,28 @@ class TaskProvider extends ChangeNotifier {
       _tasks.insert(index, removedTask);
       _errorMessage = 'Failed to delete task: $e';
       notifyListeners();
+    }
+  }
+
+  // Edit a task
+  Future<void> editTask(int index, String newTitle) async {
+    final task = tasks[index];
+    final originalTitle = task.title;
+
+    // Optimistic update
+    task.title = newTitle;
+    notifyListeners();
+
+    try {
+      if (task.id != null) {
+        await _apiService.editTask(task.id!, newTitle, task.isCompleted);
+      }
+    } catch (e) {
+      // Revert on error
+      task.title = originalTitle;
+      _errorMessage = 'Failed to edit task: $e';
+      notifyListeners();
+      rethrow;
     }
   }
 
