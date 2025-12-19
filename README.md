@@ -164,25 +164,37 @@ lib/
 
 ## Screenshots
  - Home screen with task list(list view)
- ![alt text](image.png)
+   <img width="167" height="385" alt="image" src="https://github.com/user-attachments/assets/b6b499ab-1df4-463c-8e8b-b4959a003da7" />
+
 
  - Home screen with grid view
- ![alt text](image-1.png)
+   <img width="167" height="386" alt="image" src="https://github.com/user-attachments/assets/f2c45cbf-71cc-49c5-891a-7bfdce93ff9e" />
+
+   
 
  - Task detail screen
- ![alt text](image-2.png)
+   <img width="167" height="388" alt="image" src="https://github.com/user-attachments/assets/24a7e34c-4310-462d-bde3-db9d701101f0" />
+
 
  - Add new task form
- ![alt text](image-3.png)
+  <img width="166" height="387" alt="image" src="https://github.com/user-attachments/assets/ce9378c3-bfb6-485c-aaf4-3a0d7babddea" />
+ 
 
  - Settings screen
- ![alt text](image-4.png)
+   <img width="167" height="387" alt="image" src="https://github.com/user-attachments/assets/f14ab807-6187-4c8d-af59-80cb9d061f43" />
+
 
  - Offline mode indicator
- ![alt text](image-5.png)
+  <img width="166" height="388" alt="image" src="https://github.com/user-attachments/assets/d6493739-781e-4952-9759-5fa90c9b0f8a" />
+
+
+ - Error state with retry button
+  <img width="164" height="386" alt="image" src="https://github.com/user-attachments/assets/56785361-4503-474f-860f-7c9d001f9360" />
+
 
  - Different filter states(All/Completed/Pending)
- ![alt text](image-6.png)
+   <img width="170" height="109" alt="image" src="https://github.com/user-attachments/assets/d782d905-c84f-4592-91cf-7dd13fabdaf6" />
+
 
 
 ### Light Mode
