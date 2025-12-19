@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
-// import '../widgets/task_input.dart';
 import '../widgets/task_list.dart';
 import '../utils/constants.dart';
 import '../utils/theme_provider.dart';
+import 'task_form_screen.dart';
+import 'settings_screen.dart';
+import '../providers/view_mode_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch tasks when screen loads
+    
     Future.microtask(() {
       context.read<TaskProvider>().fetchTasks();
     });
@@ -27,44 +29,11 @@ class _HomeScreenState extends State<HomeScreen> {
     await context.read<TaskProvider>().fetchTasks();
   }
 
-  void _showAddTaskDialog() {
-    final controller = TextEditingController();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add New Task'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            hintText: 'Enter task title',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                try {
-                  await context.read<TaskProvider>().addTask(controller.text);
-                  if (mounted) Navigator.pop(context);
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
-                  }
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+  void _navigateToAddTask() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TaskFormScreen(),
       ),
     );
   }
@@ -125,44 +94,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+    Provider.of<ThemeProvider>(context);
     
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appTitle),
         actions: [
-          // Filter button
+          Consumer<ViewModeProvider>(
+            builder: (context, viewModeProvider, child) {
+              return IconButton(
+                icon: Icon(
+                  viewModeProvider.isGridView ? Icons.view_list : Icons.grid_view,
+                ),
+                onPressed: () {
+                  viewModeProvider.toggleViewMode();
+                },
+                tooltip: viewModeProvider.isGridView ? 'Switch to List View' : 'Switch to Grid View',
+              );
+            },
+          ),
+
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _showFilterMenu,
             tooltip: 'Filter Tasks',
           ),
-          // Theme toggle button
+
           IconButton(
-            icon: Icon(
-              themeProvider.isDarkMode 
-                  ? Icons.light_mode 
-                  : Icons.dark_mode,
-            ),
+            icon: const Icon(Icons.settings),
             onPressed: () {
-              themeProvider.toggleTheme();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
             },
-            tooltip: themeProvider.isDarkMode 
-                ? 'Switch to Light Mode' 
-                : 'Switch to Dark Mode',
+            tooltip: 'Settings',
           ),
         ],
       ),
       body: Consumer<TaskProvider>(
         builder: (context, taskProvider, child) {
-          // Show loading indicator
           if (taskProvider.isLoading && taskProvider.tasks.isEmpty) {
             return const Center(
               child: CircularProgressIndicator(),
             );
           }
 
-          // Show error with retry option
           if (taskProvider.errorMessage != null && taskProvider.tasks.isEmpty) {
             return Center(
               child: Column(
@@ -198,12 +177,14 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          // Show tasks with pull-to-refresh
+          // pull to refresh
           return RefreshIndicator(
             onRefresh: _refreshTasks,
             child: Column(
               children: [
-                // Task statistics
+                _buildCacheIndicator(taskProvider),
+                _buildSearchBar(taskProvider),
+                
                 Container(
                   padding: const EdgeInsets.all(16),
                   child: Row(
@@ -216,10 +197,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 Expanded(
-                  child: TaskList(
-                    tasks: taskProvider.tasks,
-                    onToggleTask: (index) => taskProvider.toggleTask(index),
-                    onDeleteTask: (index) => taskProvider.deleteTask(index),
+                  child: Consumer<ViewModeProvider>(
+                    builder: (context, viewModeProvider, child) {
+                      return TaskList(
+                        tasks: taskProvider.tasks,
+                        isGridView: viewModeProvider.isGridView,
+                        onToggleTask: (index) => taskProvider.toggleTask(index),
+                        onDeleteTask: (index) => taskProvider.deleteTask(index),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -228,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddTaskDialog,
+        onPressed: _navigateToAddTask,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
@@ -255,4 +241,98 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+
+  Widget _buildSearchBar(TaskProvider taskProvider) {
+  return Padding(
+    padding: const EdgeInsets.all(16),
+    child: TextField(
+      onChanged: (value) {
+        taskProvider.setSearchQuery(value);
+      },
+      decoration: InputDecoration(
+        hintText: 'Search tasks...',
+        prefixIcon: const Icon(Icons.search),
+        suffixIcon: taskProvider.searchQuery.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  taskProvider.clearSearchQuery();
+                },
+              )
+            : null,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        filled: true,
+        fillColor: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2C2C2C)
+            : Colors.grey[100],
+      ),
+    ),
+  );
+}
+
+  Widget _buildCacheIndicator(TaskProvider taskProvider) {
+  if (!taskProvider.isUsingCache) return const SizedBox.shrink();
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    color: Colors.orange.withOpacity(0.2),
+    child: Row(
+      children: [
+        const Icon(Icons.offline_bolt, color: Colors.orange, size: 20),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Offline Mode',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                  fontSize: 12,
+                ),
+              ),
+              if (taskProvider.lastFetchTime != null)
+                Text(
+                  'Last updated: ${_formatCacheTime(taskProvider.lastFetchTime!)}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey[700],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        TextButton(
+          onPressed: () => taskProvider.fetchTasks(),
+          child: const Text(
+            'Refresh',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+String _formatCacheTime(DateTime time) {
+  final now = DateTime.now();
+  final difference = now.difference(time);
+
+  if (difference.inMinutes < 1) {
+    return 'Just now';
+  } else if (difference.inHours < 1) {
+    return '${difference.inMinutes} min ago';
+  } else if (difference.inDays < 1) {
+    return '${difference.inHours} hours ago';
+  } else {
+    return '${difference.inDays} days ago';
+  }
+}
+
+  
 }

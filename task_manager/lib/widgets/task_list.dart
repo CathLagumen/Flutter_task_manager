@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
+import 'task_card.dart';
 
 class TaskList extends StatelessWidget {
   final List<Task> tasks;
   final Function(int) onToggleTask;
   final Function(int) onDeleteTask;
+  final bool isGridView;
 
   const TaskList({
     super.key,
     required this.tasks,
     required this.onToggleTask,
     required this.onDeleteTask,
+    this.isGridView = false,
   });
 
   void _showEditDialog(BuildContext context, int index, Task task) {
     final controller = TextEditingController(text: task.title);
-
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -41,23 +44,18 @@ class TaskList extends StatelessWidget {
             onPressed: () async {
               if (controller.text.isNotEmpty && controller.text != task.title) {
                 try {
-                  await context.read<TaskProvider>().editTask(
-                    index,
-                    controller.text,
-                  );
+                  await context.read<TaskProvider>().editTask(index, controller.text);
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Task updated successfully'),
-                      ),
+                      const SnackBar(content: Text('Task updated successfully')),
                     );
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
                   }
                 }
               } else {
@@ -71,6 +69,32 @@ class TaskList extends StatelessWidget {
     );
   }
 
+  void _showDeleteDialog(BuildContext context, int index, Task task) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to delete "${task.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              onDeleteTask(index);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (tasks.isEmpty) {
@@ -78,7 +102,11 @@ class TaskList extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.task_alt, size: 80, color: Colors.grey),
+            Icon(
+              Icons.task_alt,
+              size: 80,
+              color: Colors.grey,
+            ),
             SizedBox(height: 16),
             Text(
               'No tasks found!',
@@ -92,20 +120,54 @@ class TaskList extends StatelessWidget {
             Text(
               'Try changing the filter or add a new task.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
+    if (isGridView) {
+      return _buildGridView(context);
+    } else {
+      return _buildListView(context);
+    }
+  }
+
+  // Grid View
+  Widget _buildGridView(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(8),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.85,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
       itemCount: tasks.length,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       itemBuilder: (context, index) {
         final task = tasks[index];
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        return TaskCard(
+          task: task,
+          isGridView: true,
+          onToggle: () => onToggleTask(index),
+          onDelete: () => _showDeleteDialog(context, index, task),
+          onEdit: () => _showEditDialog(context, index, task),
+        );
+      },
+    );
+  }
 
+  // List View
+  Widget _buildListView(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      itemCount: tasks.length,
+      itemBuilder: (context, index) {
+        final task = tasks[index];
         return Dismissible(
           key: Key(task.id?.toString() ?? task.title),
           direction: DismissDirection.endToStart,
@@ -117,7 +179,11 @@ class TaskList extends StatelessWidget {
               color: Colors.red,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.delete, color: Colors.white, size: 32),
+            child: const Icon(
+              Icons.delete,
+              color: Colors.white,
+              size: 32,
+            ),
           ),
           onDismissed: (direction) {
             onDeleteTask(index);
@@ -133,117 +199,12 @@ class TaskList extends StatelessWidget {
               ),
             );
           },
-          child: Card(
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: InkWell(
-              onLongPress: () => _showEditDialog(context, index, task),
-              borderRadius: BorderRadius.circular(12),
-              child: ListTile(
-                leading: Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (_) => onToggleTask(index),
-                  activeColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    decoration: task.isCompleted
-                        ? TextDecoration.lineThrough
-                        : null,
-                    color: task.isCompleted
-                        ? Colors.grey
-                        : (isDarkMode ? Colors.white : Colors.black),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 14,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'User ID: ${task.userId ?? 'N/A'}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        task.isCompleted ? Icons.check_circle : Icons.pending,
-                        size: 14,
-                        color: task.isCompleted ? Colors.green : Colors.orange,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        task.isCompleted ? 'Completed' : 'Pending',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: task.isCompleted
-                              ? Colors.green
-                              : Colors.orange,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      color: Colors.blue,
-                      tooltip: 'Edit Task',
-                      onPressed: () => _showEditDialog(context, index, task),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      color: Colors.red,
-                      tooltip: 'Delete Task',
-                      onPressed: () {
-                        // Show confirmation dialog
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Delete Task'),
-                            content: Text(
-                              'Are you sure you want to delete "${task.title}"?',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  onDeleteTask(index);
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                ),
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          child: TaskCard(
+            task: task,
+            isGridView: false,
+            onToggle: () => onToggleTask(index),
+            onDelete: () => _showDeleteDialog(context, index, task),
+            onEdit: () => _showEditDialog(context, index, task),
           ),
         );
       },

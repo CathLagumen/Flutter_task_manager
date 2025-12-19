@@ -13,7 +13,7 @@ class Task {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Convert Task to Map (for future database storage)
+  
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -24,7 +24,6 @@ class Task {
     };
   }
 
-  // Create Task from Map
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id: map['id'],
@@ -35,7 +34,7 @@ class Task {
     );
   }
 
-  // Create Task from JSON
+  // Task from JSON
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       id: json['id'],
