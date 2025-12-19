@@ -167,8 +167,10 @@ lib/
    <img width="167" height="385" alt="image" src="https://github.com/user-attachments/assets/b6b499ab-1df4-463c-8e8b-b4959a003da7" />
 
 
+
  - Home screen with grid view
    <img width="167" height="386" alt="image" src="https://github.com/user-attachments/assets/f2c45cbf-71cc-49c5-891a-7bfdce93ff9e" />
+
 
    
 
@@ -176,20 +178,25 @@ lib/
    <img width="167" height="388" alt="image" src="https://github.com/user-attachments/assets/24a7e34c-4310-462d-bde3-db9d701101f0" />
 
 
+
  - Add new task form
   <img width="166" height="387" alt="image" src="https://github.com/user-attachments/assets/ce9378c3-bfb6-485c-aaf4-3a0d7babddea" />
  
 
+
  - Settings screen
    <img width="167" height="387" alt="image" src="https://github.com/user-attachments/assets/f14ab807-6187-4c8d-af59-80cb9d061f43" />
+
 
 
  - Offline mode indicator
   <img width="166" height="388" alt="image" src="https://github.com/user-attachments/assets/d6493739-781e-4952-9759-5fa90c9b0f8a" />
 
 
+
  - Error state with retry button
   <img width="164" height="386" alt="image" src="https://github.com/user-attachments/assets/56785361-4503-474f-860f-7c9d001f9360" />
+
 
 
  - Different filter states(All/Completed/Pending)
